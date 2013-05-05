@@ -7,7 +7,6 @@ Fluentd plugin to calc messages.
     <match foo.**>
       type calc
       interval 5s
-      aggragate tag
       add_tag_prefix calc
 
       sum .*_count$
@@ -18,18 +17,18 @@ Fluentd plugin to calc messages.
 
 Assuming following inputs are coming:
 
-    foo.bar: {"4xx_count":1,"5xx_count":2","reqtime_max":12083,"reqtime_min":10,reqtime_avg":240.46}
-    foo.bar: {"4xx_count":4,"5xx_count":2","reqtime_max":24831,"reqtime_min":82,reqtime_avg":300.46}
+    foo.bar: {"4xx_count":1,"5xx_count":2","reqtime_max":12083,"reqtime_min":10,"reqtime_avg":240.46}
+    foo.bar: {"4xx_count":4,"5xx_count":2","reqtime_max":24831,"reqtime_min":82,"reqtime_avg":300.46}
 
 then output bocomes as belows:
 
-    foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":82,reqtime_avg":270.46}
+    calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":82,"reqtime_avg":270.46}
 
 ## Parameters
 
-- aggragate
-    
-    Calculate by each `tag` or `all`. The default value is `tag`.
+- sum, min, max, avg
+
+    Calculation. Specify input keys by a regular expression
 
 - interval
 
@@ -37,15 +36,15 @@ then output bocomes as belows:
 
 - tag
 
-    The output tag name
+    The output tag name. Required for aggregate `all`. 
 
 - add_tag_prefix
 
-    Add tag prefix for output message
+    Add tag prefix for output message. 
 
-- sum, min, max, avg
-
-    Calculation. Specify input keys by a regular expression
+- aggragate
+    
+    Calculate by each `tag` or `all`. The default value is `tag`.
 
 ## ChangeLog
 
