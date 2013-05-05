@@ -1,11 +1,16 @@
 # encoding: UTF-8
 require_relative 'spec_helper'
 
+class Fluent::Test::OutputTestDriver
+  def emit_with_tag(record, time=Time.now, tag = nil)
+    @tag = tag if tag
+    emit(record, time)
+  end
+end
+
 describe Fluent::CalcOutput do
   before { Fluent::Test.setup }
-  CONFIG = %[
-    input_key message
-  ]
+  CONFIG = %[]
   let(:tag) { 'foo.bar' }
   let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::CalcOutput, tag).configure(config) }
 
@@ -14,7 +19,7 @@ describe Fluent::CalcOutput do
       context 'invalid aggregate' do
         let(:config) do
           CONFIG + %[
-          aggregate foo
+            aggregate foo
           ]
         end
         it { expect { driver }.to raise_error(Fluent::ConfigError) }
@@ -23,7 +28,7 @@ describe Fluent::CalcOutput do
       context 'no tag for aggregate all' do
         let(:config) do
           CONFIG + %[
-          aggregate all
+            aggregate all
           ]
         end
         it { expect { driver }.to raise_error(Fluent::ConfigError) }
@@ -121,9 +126,16 @@ describe Fluent::CalcOutput do
       it { emit }
     end
 
-    context 'aggregate all' do
-      let(:config) do
-        CONFIG + %[
+    context 'aggregate' do
+      let(:emit) do
+        driver.run { messages.each {|message| driver.emit_with_tag(message, time, 'foo.bar') } }
+        driver.run { messages.each {|message| driver.emit_with_tag(message, time, 'foo.bar2') } }
+        driver.instance.flush_emit(0)
+      end
+
+      context 'aggregate all' do
+        let(:config) do
+          CONFIG + %[
           aggregate all
           tag foo
           sum _count$
@@ -131,14 +143,38 @@ describe Fluent::CalcOutput do
           min _min$
           avg _avg$
         ]
+        end
+        before do
+          Fluent::Engine.stub(:now).and_return(time)
+          Fluent::Engine.should_receive(:emit).with("foo", time, {
+            "4xx_count"=>12,"5xx_count"=>12,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
+          })
+        end
+        it { emit }
       end
-      before do
-        Fluent::Engine.stub(:now).and_return(time)
-        Fluent::Engine.should_receive(:emit).with("foo", time, { 
-          "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
-        })
+
+      context 'aggregate tag' do
+        let(:config) do
+          CONFIG + %[
+          aggregate tag
+          add_tag_prefix calc
+          sum _count$
+          max _max$
+          min _min$
+          avg _avg$
+          ]
+        end
+        before do
+          Fluent::Engine.stub(:now).and_return(time)
+          Fluent::Engine.should_receive(:emit).with("calc.foo.bar", time, {
+            "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
+          })
+          Fluent::Engine.should_receive(:emit).with("calc.foo.bar2", time, {
+            "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
+          })
+        end
+        it { emit }
       end
-      it { emit }
     end
   end
 end
