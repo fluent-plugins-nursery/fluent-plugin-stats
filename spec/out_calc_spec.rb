@@ -69,6 +69,7 @@ describe Fluent::CalcOutput do
     let(:messages) do
       [
         {"4xx_count"=>1,"5xx_count"=>2,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3},
+        {">4sec_count"=>1},
         {"4xx_count"=>2,"5xx_count"=>2,"reqtime_max"=>5,"reqtime_min"=>2,"reqtime_avg"=>2},
         {"4xx_count"=>3,"5xx_count"=>2,"reqtime_max"=>1,"reqtime_min"=>3,"reqtime_avg"=>4},
       ]
@@ -139,9 +140,6 @@ describe Fluent::CalcOutput do
           aggregate all
           tag foo
           sum _count$
-          max _max$
-          min _min$
-          avg _avg$
         ]
         end
         before do
@@ -159,9 +157,6 @@ describe Fluent::CalcOutput do
           aggregate tag
           add_tag_prefix calc
           sum _count$
-          max _max$
-          min _min$
-          avg _avg$
           ]
         end
         before do
