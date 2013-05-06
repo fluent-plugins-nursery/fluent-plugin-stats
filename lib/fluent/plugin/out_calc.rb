@@ -121,7 +121,7 @@ class Fluent::CalcOutput < Fluent::Output
   def generate_output(count, matches)
     output = matches.dup
     output.keys.each do |key|
-      if @avg.match(key)
+      if @avg and @avg.match(key)
         output[key] = matches[key] / count.to_f # compute avg
       end
     end
