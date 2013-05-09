@@ -88,6 +88,9 @@ class Fluent::CalcOutput < Fluent::Output
     end
 
     chain.next
+  rescue => e
+    $log.warn e.message
+    $log.warn e.backtrace.join(', ')
   end
 
   # thread callback
@@ -96,10 +99,15 @@ class Fluent::CalcOutput < Fluent::Output
     @last_checked = Fluent::Engine.now
     while true
       sleep 0.5
-      if Fluent::Engine.now - @last_checked >= @interval
-        now = Fluent::Engine.now
-        flush_emit(now - @last_checked)
-        @last_checked = now
+      begin
+        if Fluent::Engine.now - @last_checked >= @interval
+          now = Fluent::Engine.now
+          flush_emit(now - @last_checked)
+          @last_checked = now
+        end
+      rescue => e
+        $log.warn e.message
+        $log.warn e.backtrace.join(', ')
       end
     end
   end
