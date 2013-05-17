@@ -1,6 +1,6 @@
 # fluent-plugin-calc [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-calc.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-calc) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-calc.png)](https://gemnasium.com/sonots/fluent-plugin-calc) [![Coverage Status](https://coveralls.io/repos/sonots/fluent-plugin-calc/badge.png?branch=master)](https://coveralls.io/r/sonots/fluent-plugin-calc)
 
-Fluentd plugin to calc messages.
+Simple fluentd plugin to calculate messages.
 
 ## Configuration
 
