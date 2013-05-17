@@ -4,6 +4,8 @@ Simple fluentd plugin to calculate messages.
 
 ## Configuration
 
+Example (sum for xxx_count, max for xxx_max, min for xxx_min, avg for xxx_avg): 
+
     <match foo.**>
       type calc
       interval 5s
@@ -20,7 +22,7 @@ Assuming following inputs are coming:
     foo.bar: {"4xx_count":1,"5xx_count":2","reqtime_max":12083,"reqtime_min":10,"reqtime_avg":240.46}
     foo.bar: {"4xx_count":4,"5xx_count":2","reqtime_max":24831,"reqtime_min":82,"reqtime_avg":300.46}
 
-then output bocomes as belows:
+then output bocomes as belows: 
 
     calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":82,"reqtime_avg":270.46}
 
