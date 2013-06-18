@@ -89,8 +89,7 @@ class Fluent::CalcOutput < Fluent::Output
 
     chain.next
   rescue => e
-    $log.warn e.message
-    $log.warn e.backtrace.join(', ')
+    $log.warn "#{e.class} #{e.message} #{e.backtrace.first}"
   end
 
   # thread callback
@@ -106,8 +105,7 @@ class Fluent::CalcOutput < Fluent::Output
           @last_checked = now
         end
       rescue => e
-        $log.warn e.message
-        $log.warn e.backtrace.join(', ')
+        $log.warn "#{e.class} #{e.message} #{e.backtrace.first}"
       end
     end
   end
@@ -127,6 +125,7 @@ class Fluent::CalcOutput < Fluent::Output
   end
 
   def generate_output(count, matches)
+    return nil if matches.empty?
     output = matches.dup
     output.keys.each do |key|
       if @avg and @avg.match(key)
