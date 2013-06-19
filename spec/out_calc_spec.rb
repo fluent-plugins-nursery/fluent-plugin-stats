@@ -104,11 +104,14 @@ describe Fluent::CalcOutput do
       let(:config) do
         CONFIG + %[
           tag foo
+          sum _count$
         ]
       end
       before do
         Fluent::Engine.stub(:now).and_return(time)
-        Fluent::Engine.should_receive(:emit).with("foo", time, {})
+        Fluent::Engine.should_receive(:emit).with("foo", time, {
+          "4xx_count"=>6,"5xx_count"=>6
+        })
       end
       it { emit }
     end
@@ -117,11 +120,14 @@ describe Fluent::CalcOutput do
       let(:config) do
         CONFIG + %[
           add_tag_prefix foo
+          sum _count$
         ]
       end
       before do
         Fluent::Engine.stub(:now).and_return(time)
-        Fluent::Engine.should_receive(:emit).with("foo.#{tag}", time, {})
+        Fluent::Engine.should_receive(:emit).with("foo.#{tag}", time, {
+          "4xx_count"=>6,"5xx_count"=>6
+        })
       end
       it { emit }
     end
