@@ -48,6 +48,10 @@ then output bocomes as belows:
     
     Calculate by each `tag` or `all`. The default value is `tag`.
 
+- store_file
+
+    Store internal data into file on shutdown, and load on starting.
+
 ## ChangeLog
 
 See [CHANGELOG.md](CHANGELOG.md) for details.

@@ -182,6 +182,39 @@ describe Fluent::CalcOutput do
         it { emit }
       end
     end
+
+    describe "store_file" do
+      let(:store_file) do
+        dirname = "tmp"
+        Dir.mkdir dirname unless Dir.exist? dirname
+        filename = "#{dirname}/test.dat"
+        File.unlink filename if File.exist? filename
+        filename
+      end
+
+      let(:config) do
+        CONFIG + %[
+          sum _count$
+          store_file #{store_file}
+        ]
+      end
+
+      it 'stored_data and loaded_data should equal' do
+        driver.run { messages.each {|message| driver.emit(message, time) } }
+        stored_counts = driver.instance.counts
+        stored_matches = driver.instance.matches
+        driver.instance.shutdown
+        driver.instance.counts = {}
+        driver.instance.matches = {}
+
+        driver.instance.start
+        loaded_counts = driver.instance.counts
+        loaded_matches = driver.instance.matches
+
+        loaded_counts.should == stored_counts
+        loaded_matches.should == stored_matches
+      end
+    end
   end
 end
 

@@ -10,7 +10,9 @@ class Fluent::CalcOutput < Fluent::Output
   config_param :tag, :string, :default => nil
   config_param :add_tag_prefix, :string, :default => 'calc'
   config_param :aggregate, :string, :default => 'tag'
+  config_param :store_file, :string, :default => nil
 
+  attr_accessor :counts
   attr_accessor :matches
   attr_accessor :last_checked
 
@@ -39,6 +41,7 @@ class Fluent::CalcOutput < Fluent::Output
 
   def start
     super
+    load_from_file
     @watcher = Thread.new(&method(:watcher))
   end
 
@@ -46,6 +49,7 @@ class Fluent::CalcOutput < Fluent::Output
     super
     @watcher.terminate
     @watcher.join
+    store_to_file
   end
 
   # Called when new line comes. This method actually does not emit
@@ -133,6 +137,49 @@ class Fluent::CalcOutput < Fluent::Output
       end
     end
     output
+  end
+
+  def store_to_file
+    return unless @store_file
+
+    begin
+      Pathname.new(@store_file).open('wb') do |f|
+        Marshal.dump({
+          :counts           => @counts,
+          :matches          => @matches,
+          :aggregate        => @aggregate,
+          :sum              => @sum,
+          :max              => @max,
+          :min              => @min,
+          :avg              => @avg,
+        }, f)
+      end
+    rescue => e
+      $log.warn "out_calc: Can't write store_file #{e.class} #{e.message}"
+    end
+  end
+
+  def load_from_file
+    return unless @store_file
+    return unless (f = Pathname.new(@store_file)).exist?
+
+    begin
+      f.open('rb') do |f|
+        stored = Marshal.load(f)
+        if stored[:aggregate] == @aggregate and
+          stored[:sum] == @sum and
+          stored[:max] == @max and
+          stored[:min] == @min and
+          stored[:avg] == @avg
+          @counts = stored[:counts]
+          @matches = stored[:matches]
+        else
+          $log.warn "out_calc: configuration param was changed. ignore stored data"
+        end
+      end
+    rescue => e
+      $log.warn "out_calc: Can't load store_file #{e.class} #{e.message}"
+    end
   end
 
 end
