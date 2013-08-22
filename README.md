@@ -50,7 +50,7 @@ then output bocomes as belows:
 
 - store_file
 
-    Store internal data into file on shutdown, and load on starting.
+    Store internal data into a file of the given path on shutdown, and load on starting.
 
 ## ChangeLog
 
