@@ -201,18 +201,22 @@ describe Fluent::CalcOutput do
 
       it 'stored_data and loaded_data should equal' do
         driver.run { messages.each {|message| driver.emit(message, time) } }
+        driver.instance.shutdown
         stored_counts = driver.instance.counts
         stored_matches = driver.instance.matches
-        driver.instance.shutdown
+        stored_passed_time = driver.instance.passed_time
         driver.instance.counts = {}
         driver.instance.matches = {}
+        driver.instance.passed_time = nil
 
         driver.instance.start
         loaded_counts = driver.instance.counts
         loaded_matches = driver.instance.matches
+        loaded_passed_time = driver.instance.passed_time
 
         loaded_counts.should == stored_counts
         loaded_matches.should == stored_matches
+        loaded_passed_time.should == stored_passed_time
       end
     end
   end
