@@ -24,7 +24,7 @@ Assuming following inputs are coming:
 
 then output bocomes as belows: 
 
-    calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":82,"reqtime_avg":270.46}
+    calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
 
 ## Parameters
 
