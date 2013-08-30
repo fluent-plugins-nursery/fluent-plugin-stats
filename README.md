@@ -4,7 +4,7 @@ Simple fluentd plugin to calculate messages.
 
 ## Configuration
 
-Example1)
+### Example 1
 
 sum for xxx_count, max for xxx_max, min for xxx_min, avg for xxx_avg
 
@@ -28,7 +28,7 @@ then output bocomes as belows:
 
     calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
 
-Example2)
+### Example 2
 
 sum, max, min, avg for the same key
 
