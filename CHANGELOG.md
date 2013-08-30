@@ -1,3 +1,9 @@
+## 0.0.3 (2013/08/30)
+
+Enhancement:
+
+- add `sum_suffix`, `max_suffix`, `min_suffix`, `avg_suffix`.
+
 ## 0.0.2 (2013/05/06)
 
 Bugfixes:

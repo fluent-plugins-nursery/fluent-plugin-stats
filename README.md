@@ -4,7 +4,9 @@ Simple fluentd plugin to calculate messages.
 
 ## Configuration
 
-Example (sum for xxx_count, max for xxx_max, min for xxx_min, avg for xxx_avg): 
+Example1)
+
+sum for xxx_count, max for xxx_max, min for xxx_min, avg for xxx_avg
 
     <match foo.**>
       type calc
@@ -26,11 +28,43 @@ then output bocomes as belows:
 
     calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
 
+Example2)
+
+sum, max, min, avg for the same key
+
+    <match foo.**>
+      type calc
+      interval 5s
+      add_tag_prefix calc
+
+      sum ^reqtime$
+      max ^reqtime$
+      min ^reqtime$
+      avg ^reqtime$
+      sum_suffix _sum
+      max_suffix _max
+      min_suffix _min
+      avg_suffix _avg
+    </match>
+
+Assuming following inputs are coming:
+
+    foo.bar: {"reqtime":1.000}
+    foo.bar: {"reqtime":2.000}
+
+then output bocomes as belows: 
+
+    calc.foo.bar: {"reqtime_sum":3.000,"reqtime_max":2.000,"reqtime_min":1.000,"reqtime_avg":1.500}
+
 ## Parameters
 
 - sum, min, max, avg
 
     Calculation. Specify input keys by a regular expression
+
+- sum\_suffix, min\_suffix, max\_suffix, avg\_suffix
+
+    Add a suffix to keys of the output record
 
 - interval
 
