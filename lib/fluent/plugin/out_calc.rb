@@ -11,6 +11,10 @@ class Fluent::CalcOutput < Fluent::Output
   config_param :max, :string, :default => nil
   config_param :min, :string, :default => nil
   config_param :avg, :string, :default => nil
+  config_param :sum_suffix, :string, :default => ""
+  config_param :max_suffix, :string, :default => ""
+  config_param :min_suffix, :string, :default => ""
+  config_param :avg_suffix, :string, :default => ""
   config_param :interval, :time, :default => 5
   config_param :tag, :string, :default => nil
   config_param :add_tag_prefix, :string, :default => 'calc'
@@ -64,17 +68,20 @@ class Fluent::CalcOutput < Fluent::Output
     tag = 'all' if @aggregate == 'all'
       
     # calc
-    count = 0; matches = {}
-    es.each do |time,record|
+    count = 0; matches = { :sum => {}, :max => {}, :min => {}, :avg => {} }
+    es.each do |time, record|
       record.keys.each do |key|
         if @sum and @sum.match(key)
-          matches[key] = (matches[key] ? matches[key] + record[key] : record[key])
-        elsif @max and @max.match(key)
-          matches[key] = (matches[key] ? [matches[key], record[key]].max : record[key])
-        elsif @min and @min.match(key)
-          matches[key] = (matches[key] ? [matches[key], record[key]].min : record[key])
-        elsif @avg and @avg.match(key)
-          matches[key] = (matches[key] ? matches[key] + record[key] : record[key]) # sum yet
+          matches[:sum][key] = sum(matches[:sum][key], record[key])
+        end
+        if @max and @max.match(key)
+          matches[:max][key] = max(matches[:max][key], record[key])
+        end
+        if @min and @min.match(key)
+          matches[:min][key] = min(matches[:min][key], record[key])
+        end
+        if @avg and @avg.match(key)
+          matches[:avg][key] = sum(matches[:avg][key], record[key]) # sum yet
         end
       end
       count += 1
@@ -82,18 +89,19 @@ class Fluent::CalcOutput < Fluent::Output
 
     # thread safe merge
     @counts[tag] ||= 0
-    @matches[tag] ||= {}
+    @matches[tag] ||= { :sum => {}, :max => {}, :min => {}, :avg => {} }
     @mutex.synchronize do
-      matches.keys.each do |key|
-        if @sum and @sum.match(key)
-          @matches[tag][key] = (@matches[tag][key] ? @matches[tag][key] + matches[key] : matches[key])
-        elsif @max and @max.match(key)
-          @matches[tag][key] = (@matches[tag][key] ? [@matches[tag][key], matches[key]].max : matches[key])
-        elsif @min and @min.match(key)
-          @matches[tag][key] = (@matches[tag][key] ? [@matches[tag][key], matches[key]].min : matches[key])
-        elsif @avg and @avg.match(key)
-          @matches[tag][key] = (@matches[tag][key] ? @matches[tag][key] + matches[key] : matches[key]) # sum yet
-        end
+      matches[:sum].keys.each do |key|
+        @matches[tag][:sum][key] = sum(@matches[tag][:sum][key], matches[:sum][key])
+      end
+      matches[:max].keys.each do |key|
+        @matches[tag][:max][key] = max(@matches[tag][:max][key], matches[:max][key])
+      end
+      matches[:min].keys.each do |key|
+        @matches[tag][:min][key] = min(@matches[tag][:min][key], matches[:min][key])
+      end
+      matches[:avg].keys.each do |key|
+        @matches[tag][:avg][key] = sum(@matches[tag][:avg][key], matches[:avg][key]) # sum yet
       end
       @counts[tag] += count
     end
@@ -137,13 +145,32 @@ class Fluent::CalcOutput < Fluent::Output
 
   def generate_output(count, matches)
     return nil if matches.empty?
-    output = matches.dup
-    output.keys.each do |key|
-      if @avg and @avg.match(key)
-        output[key] = matches[key] / count.to_f # compute avg
-      end
+    output = {}
+    matches[:sum].keys.each do |key|
+      output[key + @sum_suffix] = matches[:sum][key]
+    end
+    matches[:max].keys.each do |key|
+      output[key + @max_suffix] = matches[:max][key]
+    end
+    matches[:min].keys.each do |key|
+      output[key + @min_suffix] = matches[:min][key]
+    end
+    matches[:avg].keys.each do |key|
+      output[key + @avg_suffix] = matches[:avg][key] / count.to_f # compute avg here
     end
     output
+  end
+
+  def sum(a, b)
+    [a, b].compact.inject(:+)
+  end
+
+  def max(a, b)
+    [a, b].compact.max
+  end
+
+  def min(a, b)
+    [a, b].compact.min
   end
 
   # Store internal status into a file
@@ -188,6 +215,11 @@ class Fluent::CalcOutput < Fluent::Output
           stored[:max] == @max and
           stored[:min] == @min and
           stored[:avg] == @avg
+
+          if !stored[:matches].first[1].has_key?(:max)
+            $log.warn "out_calc: stored data does not have compatibility with the current version. ignore stored data"
+            return
+          end
 
           if Fluent::Engine.now <= stored[:saved_at] + interval
             @counts = stored[:counts]

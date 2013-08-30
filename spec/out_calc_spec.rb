@@ -78,10 +78,6 @@ describe Fluent::CalcOutput do
       driver.instance.flush_emit(0)
     end
 
-    context 'interval' do
-      pending
-    end
-
     context 'sum/max/min/avg' do
       let(:config) do
         CONFIG + %[
@@ -95,6 +91,34 @@ describe Fluent::CalcOutput do
         Fluent::Engine.stub(:now).and_return(time)
         Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
+        })
+      end
+      it { emit }
+    end
+
+    context 'sum/max/min/avg_suffix' do
+      let(:config) do
+        CONFIG + %[
+          sum ^(reqtime|reqsize)$
+          max ^reqtime$
+          min ^reqtime$
+          avg ^reqtime$
+          sum_suffix _sum
+          max_suffix _max
+          min_suffix _min
+          avg_suffix _avg
+        ]
+      end
+      let(:messages) do
+        [
+          {"reqtime"=>1.000,"reqsize"=>10},
+          {"reqtime"=>2.000,"reqsize"=>20},
+        ]
+    end
+      before do
+        Fluent::Engine.stub(:now).and_return(time)
+        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+          "reqtime_sum"=>3.000,"reqtime_max"=>2.000,"reqtime_min"=>1.000,"reqtime_avg"=>1.500,"reqsize_sum"=>30
         })
       end
       it { emit }
