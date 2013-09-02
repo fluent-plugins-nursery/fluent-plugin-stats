@@ -1,3 +1,9 @@
+## 0.0.5 (2013/09/02)
+
+Enhancement:
+
+- add `sum_keys`, `max_keys`, `min_keys`, `avg_keys`.
+
 ## 0.0.4 (2013/08/30)
 
 Enhancement:
