@@ -1,3 +1,9 @@
+## 0.1.0 (2013/09/02)
+
+Changes
+
+- Accept string data by `to_f`.
+
 ## 0.0.5 (2013/09/02)
 
 Enhancement:
