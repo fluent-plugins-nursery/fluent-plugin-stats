@@ -60,7 +60,13 @@ then output bocomes as belows:
 
 - sum, min, max, avg
 
-    Calculation. Specify input keys by a regular expression
+    Target of calculation. Specify input keys by a regular expression
+
+- sum\_keys, min\_keys, max\_keys, avg\_keys
+
+    Target of calculation. Specify input keys by a string separated by , (comma) such as
+
+        sum_keys 4xx_count,5xx_count
 
 - sum\_suffix, min\_suffix, max\_suffix, avg\_suffix
 
