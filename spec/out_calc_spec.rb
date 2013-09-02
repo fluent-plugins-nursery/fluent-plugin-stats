@@ -68,9 +68,9 @@ describe Fluent::CalcOutput do
     let(:time) { Time.now.to_i }
     let(:messages) do
       [
-        {"4xx_count"=>1,"5xx_count"=>2,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3},
-        {"4xx_count"=>2,"5xx_count"=>2,"reqtime_max"=>5,"reqtime_min"=>2,"reqtime_avg"=>2},
-        {"4xx_count"=>3,"5xx_count"=>2,"reqtime_max"=>1,"reqtime_min"=>3,"reqtime_avg"=>4},
+        {"4xx_count"=>"1","5xx_count"=>2,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3},
+        {"4xx_count"=>"2","5xx_count"=>2,"reqtime_max"=>5,"reqtime_min"=>2,"reqtime_avg"=>2},
+        {"4xx_count"=>"3","5xx_count"=>2,"reqtime_max"=>1,"reqtime_min"=>3,"reqtime_avg"=>4},
       ]
     end
     let(:emit) do

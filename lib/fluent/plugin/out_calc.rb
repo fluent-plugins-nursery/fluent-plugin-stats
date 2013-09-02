@@ -79,29 +79,34 @@ class Fluent::CalcOutput < Fluent::Output
     count = 0; matches = { :sum => {}, :max => {}, :min => {}, :avg => {} }
     es.each do |time, record|
       @sum_keys.each do |key|
-        matches[:sum][key] = sum(matches[:sum][key], record[key])
+        value = record[key].to_f if record[key]
+        matches[:sum][key] = sum(matches[:sum][key], value)
       end
       @max_keys.each do |key|
-        matches[:max][key] = max(matches[:max][key], record[key])
+        value = record[key].to_f if record[key]
+        matches[:max][key] = max(matches[:max][key], value)
       end
       @min_keys.each do |key|
-        matches[:min][key] = min(matches[:min][key], record[key])
+        value = record[key].to_f if record[key]
+        matches[:min][key] = min(matches[:min][key], value)
       end
       @avg_keys.each do |key|
-        matches[:avg][key] = avg(matches[:avg][key], record[key])
+        value = record[key].to_f if record[key]
+        matches[:avg][key] = avg(matches[:avg][key], value)
       end
       record.keys.each do |key|
+        value = record[key].to_f
         if @sum and @sum.match(key)
-          matches[:sum][key] = sum(matches[:sum][key], record[key])
+          matches[:sum][key] = sum(matches[:sum][key], value)
         end
         if @max and @max.match(key)
-          matches[:max][key] = max(matches[:max][key], record[key])
+          matches[:max][key] = max(matches[:max][key], value)
         end
         if @min and @min.match(key)
-          matches[:min][key] = min(matches[:min][key], record[key])
+          matches[:min][key] = min(matches[:min][key], value)
         end
         if @avg and @avg.match(key)
-          matches[:avg][key] = sum(matches[:avg][key], record[key]) # sum yet
+          matches[:avg][key] = sum(matches[:avg][key], value) # sum yet
         end
       end if @sum || @max || @min || @avg
       count += 1
