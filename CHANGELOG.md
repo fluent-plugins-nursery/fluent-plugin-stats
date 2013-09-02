@@ -1,3 +1,9 @@
+## 0.1.1 (2013/09/02)
+
+Fixes
+
+- Fix the case when not record is found.
+
 ## 0.1.0 (2013/09/02)
 
 Changes
