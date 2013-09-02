@@ -74,25 +74,24 @@ class Fluent::CalcOutput < Fluent::Output
   # Called when new line comes. This method actually does not emit
   def emit(tag, es, chain)
     tag = 'all' if @aggregate == 'all'
-      
     # calc
     count = 0; matches = { :sum => {}, :max => {}, :min => {}, :avg => {} }
     es.each do |time, record|
       @sum_keys.each do |key|
-        value = record[key].to_f if record[key]
+        next unless record[key] and value = record[key].to_f
         matches[:sum][key] = sum(matches[:sum][key], value)
       end
       @max_keys.each do |key|
-        value = record[key].to_f if record[key]
+        next unless record[key] and value = record[key].to_f
         matches[:max][key] = max(matches[:max][key], value)
       end
       @min_keys.each do |key|
-        value = record[key].to_f if record[key]
+        next unless record[key] and value = record[key].to_f
         matches[:min][key] = min(matches[:min][key], value)
       end
       @avg_keys.each do |key|
-        value = record[key].to_f if record[key]
-        matches[:avg][key] = avg(matches[:avg][key], value)
+        next unless record[key] and value = record[key].to_f
+        matches[:avg][key] = sum(matches[:avg][key], value)
       end
       record.keys.each do |key|
         value = record[key].to_f

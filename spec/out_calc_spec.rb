@@ -38,7 +38,7 @@ describe Fluent::CalcOutput do
     describe 'good configuration' do
       context "nothing" do
         let(:config) { '' }
-        it { expect { driver }.to_not raise_error(Fluent::ConfigError) }
+        it { expect { driver }.to_not raise_error }
       end
 
       context 'sum/max/min/avg' do
@@ -50,7 +50,7 @@ describe Fluent::CalcOutput do
             avg _avg$
           ]
         end
-        it { expect { driver }.to_not raise_error(Fluent::ConfigError) }
+        it { expect { driver }.to_not raise_error }
       end
 
       context "check default" do
@@ -100,9 +100,9 @@ describe Fluent::CalcOutput do
       let(:config) do
         CONFIG + %[
           sum_keys 4xx_count,5xx_count
-          max reqtime_max
-          min reqtime_min
-          avg reqtime_avg
+          max_keys reqtime_max
+          min_keys reqtime_min
+          avg_keys reqtime_avg,not_found
         ]
       end
       before do
