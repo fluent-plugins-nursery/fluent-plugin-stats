@@ -11,6 +11,10 @@ class Fluent::CalcOutput < Fluent::Output
   config_param :max, :string, :default => nil
   config_param :min, :string, :default => nil
   config_param :avg, :string, :default => nil
+  config_param :sum_keys, :string, :default => nil
+  config_param :max_keys, :string, :default => nil
+  config_param :min_keys, :string, :default => nil
+  config_param :avg_keys, :string, :default => nil
   config_param :sum_suffix, :string, :default => ""
   config_param :max_suffix, :string, :default => ""
   config_param :min_suffix, :string, :default => ""
@@ -35,6 +39,10 @@ class Fluent::CalcOutput < Fluent::Output
     @max = Regexp.new(@max) if @max
     @min = Regexp.new(@min) if @min
     @avg = Regexp.new(@avg) if @avg
+    @sum_keys = @sum_keys ? @sum_keys.split(',') : []
+    @max_keys = @max_keys ? @max_keys.split(',') : []
+    @min_keys = @min_keys ? @min_keys.split(',') : []
+    @avg_keys = @avg_keys ? @avg_keys.split(',') : []
 
     unless ['tag', 'all'].include?(@aggregate)
       raise Fluent::ConfigError, "aggregate allows tag/all"
@@ -70,6 +78,18 @@ class Fluent::CalcOutput < Fluent::Output
     # calc
     count = 0; matches = { :sum => {}, :max => {}, :min => {}, :avg => {} }
     es.each do |time, record|
+      @sum_keys.each do |key|
+        matches[:sum][key] = sum(matches[:sum][key], record[key])
+      end
+      @max_keys.each do |key|
+        matches[:max][key] = max(matches[:max][key], record[key])
+      end
+      @min_keys.each do |key|
+        matches[:min][key] = min(matches[:min][key], record[key])
+      end
+      @avg_keys.each do |key|
+        matches[:avg][key] = avg(matches[:avg][key], record[key])
+      end
       record.keys.each do |key|
         if @sum and @sum.match(key)
           matches[:sum][key] = sum(matches[:sum][key], record[key])
@@ -83,7 +103,7 @@ class Fluent::CalcOutput < Fluent::Output
         if @avg and @avg.match(key)
           matches[:avg][key] = sum(matches[:avg][key], record[key]) # sum yet
         end
-      end
+      end if @sum || @max || @min || @avg
       count += 1
     end
 

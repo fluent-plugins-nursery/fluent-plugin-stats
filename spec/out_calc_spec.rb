@@ -96,6 +96,24 @@ describe Fluent::CalcOutput do
       it { emit }
     end
 
+    context 'sum/max/min/avg_keys' do
+      let(:config) do
+        CONFIG + %[
+          sum_keys 4xx_count,5xx_count
+          max reqtime_max
+          min reqtime_min
+          avg reqtime_avg
+        ]
+      end
+      before do
+        Fluent::Engine.stub(:now).and_return(time)
+        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+          "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
+        })
+      end
+      it { emit }
+    end
+
     context 'sum/max/min/avg_suffix' do
       let(:config) do
         CONFIG + %[
