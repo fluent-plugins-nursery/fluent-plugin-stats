@@ -216,7 +216,7 @@ class Fluent::CalcOutput < Fluent::Output
           stored[:min] == @min and
           stored[:avg] == @avg
 
-          if !stored[:matches].first[1].has_key?(:max)
+          if !stored[:matches].empty? and !stored[:matches].first[1].has_key?(:max)
             $log.warn "out_calc: stored data does not have compatibility with the current version. ignore stored data"
             return
           end
