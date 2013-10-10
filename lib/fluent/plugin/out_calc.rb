@@ -25,7 +25,6 @@ class Fluent::CalcOutput < Fluent::Output
   config_param :aggregate, :string, :default => 'tag'
   config_param :store_file, :string, :default => nil
 
-  attr_accessor :counts
   attr_accessor :matches
   attr_accessor :saved_duration
   attr_accessor :saved_at
@@ -53,7 +52,6 @@ class Fluent::CalcOutput < Fluent::Output
       raise Fluent::ConfigError, "tag must be specified for aggregate all" if @tag.nil?
     end
 
-    @counts = {}
     @matches = {}
     @mutex = Mutex.new
   end
@@ -75,7 +73,7 @@ class Fluent::CalcOutput < Fluent::Output
   def emit(tag, es, chain)
     tag = 'all' if @aggregate == 'all'
     # calc
-    count = 0; matches = { :sum => {}, :max => {}, :min => {}, :avg => {} }
+    matches = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
     es.each do |time, record|
       @sum_keys.each do |key|
         next unless record[key] and value = record[key].to_f
@@ -108,12 +106,11 @@ class Fluent::CalcOutput < Fluent::Output
           matches[:avg][key] = sum(matches[:avg][key], value) # sum yet
         end
       end if @sum || @max || @min || @avg
-      count += 1
+      matches[:count] += 1
     end
 
     # thread safe merge
-    @counts[tag] ||= 0
-    @matches[tag] ||= { :sum => {}, :max => {}, :min => {}, :avg => {} }
+    @matches[tag] ||= { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
     @mutex.synchronize do
       matches[:sum].keys.each do |key|
         @matches[tag][:sum][key] = sum(@matches[tag][:sum][key], matches[:sum][key])
@@ -127,7 +124,7 @@ class Fluent::CalcOutput < Fluent::Output
       matches[:avg].keys.each do |key|
         @matches[tag][:avg][key] = sum(@matches[tag][:avg][key], matches[:avg][key]) # sum yet
       end
-      @counts[tag] += count
+      @matches[tag][:count] += matches[:count]
     end
 
     chain.next
@@ -156,18 +153,17 @@ class Fluent::CalcOutput < Fluent::Output
   # This method is the real one to emit
   def flush_emit(step)
     time = Fluent::Engine.now
-    flushed_counts, flushed_matches, @counts, @matches = @counts, @matches, {}, {}
+    flushed_matches, @matches = @matches, {}
 
-    flushed_counts.keys.each do |tag|
-      count = flushed_counts[tag]
+    flushed_matches.keys.each do |tag|
       matches = flushed_matches[tag]
-      output = generate_output(count, matches)
+      output = generate_output(matches)
       tag = @tag ? @tag : "#{@add_tag_prefix}.#{tag}"
       Fluent::Engine.emit(tag, time, output) if output
     end
   end
 
-  def generate_output(count, matches)
+  def generate_output(matches)
     return nil if matches.empty?
     output = {}
     matches[:sum].keys.each do |key|
@@ -180,7 +176,7 @@ class Fluent::CalcOutput < Fluent::Output
       output[key + @min_suffix] = matches[:min][key]
     end
     matches[:avg].keys.each do |key|
-      output[key + @avg_suffix] = matches[:avg][key] / count.to_f # compute avg here
+      output[key + @avg_suffix] = matches[:avg][key] / matches[:count].to_f # compute avg here
     end
     output
   end
@@ -208,7 +204,6 @@ class Fluent::CalcOutput < Fluent::Output
         @saved_at = Fluent::Engine.now
         @saved_duration = @saved_at - @last_checked
         Marshal.dump({
-          :counts           => @counts,
           :matches          => @matches,
           :saved_at         => @saved_at,
           :saved_duration   => @saved_duration,
@@ -246,10 +241,13 @@ class Fluent::CalcOutput < Fluent::Output
           end
 
           if Fluent::Engine.now <= stored[:saved_at] + interval
-            @counts = stored[:counts]
             @matches = stored[:matches]
             @saved_at = stored[:saved_at]
             @saved_duration = stored[:saved_duration]
+            # for lower compatibility
+            if counts = stored[:counts]
+              @matches.keys.each {|tag| @matches[tag][:count] = counts[tag] }
+            end
 
             # skip the saved duration to continue counting
             @last_checked = Fluent::Engine.now - @saved_duration
