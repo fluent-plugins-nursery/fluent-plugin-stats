@@ -92,6 +92,14 @@ then output bocomes as belows:
 
     Store internal data into a file of the given path on shutdown, and load on starting.
 
+- zero_emit
+
+    Emit 0 on the next interval. This is useful for some software which requires to reset data such as [GrowthForecast](http://kazeburo.github.io/GrowthForecast/) . 
+
+        calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
+        # after @interval later
+        calc.foo.bar: {"4xx_count":0,"5xx_count":0","reqtime_max":0,"reqtime_min":0,"reqtime_avg":0}
+
 ## ChangeLog
 
 See [CHANGELOG.md](CHANGELOG.md) for details.
