@@ -1,3 +1,9 @@
+## 0.1.2 (2013/10/10)
+
+Enhancement:
+
+- Add `zero_emit` option to emit 0 on the next interval like datacounter plugin
+
 ## 0.1.1 (2013/09/02)
 
 Fixes

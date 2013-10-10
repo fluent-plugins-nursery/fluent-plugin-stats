@@ -24,6 +24,7 @@ class Fluent::CalcOutput < Fluent::Output
   config_param :add_tag_prefix, :string, :default => 'calc'
   config_param :aggregate, :string, :default => 'tag'
   config_param :store_file, :string, :default => nil
+  config_param :zero_emit, :bool, :default => false
 
   attr_accessor :matches
   attr_accessor :saved_duration
@@ -54,6 +55,24 @@ class Fluent::CalcOutput < Fluent::Output
 
     @matches = {}
     @mutex = Mutex.new
+  end
+
+  def initial_matches(prev_matches = nil)
+    if @zero_emit && prev_matches
+      matches = {}
+      prev_matches.keys.each do |tag|
+        next unless prev_matches[tag][:count] > 0 # Prohibit to emit anymore
+        matches[tag] = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
+        # ToDo: would want default configuration for :max, :min
+        prev_matches[tag][:sum].keys.each {|key| matches[tag][:sum][key] = 0 }
+        prev_matches[tag][:max].keys.each {|key| matches[tag][:max][key] = 0 }
+        prev_matches[tag][:min].keys.each {|key| matches[tag][:min][key] = 0 }
+        prev_matches[tag][:avg].keys.each {|key| matches[tag][:avg][key] = 0 }
+      end
+      matches
+    else
+      {}
+    end
   end
 
   def start
@@ -153,7 +172,7 @@ class Fluent::CalcOutput < Fluent::Output
   # This method is the real one to emit
   def flush_emit(step)
     time = Fluent::Engine.now
-    flushed_matches, @matches = @matches, {}
+    flushed_matches, @matches = @matches, initial_matches(@matches)
 
     flushed_matches.keys.each do |tag|
       matches = flushed_matches[tag]
@@ -176,7 +195,8 @@ class Fluent::CalcOutput < Fluent::Output
       output[key + @min_suffix] = matches[:min][key]
     end
     matches[:avg].keys.each do |key|
-      output[key + @avg_suffix] = matches[:avg][key] / matches[:count].to_f # compute avg here
+      output[key + @avg_suffix] = matches[:avg][key]
+      output[key + @avg_suffix] /= matches[:count].to_f if matches[:count] > 0
     end
     output
   end

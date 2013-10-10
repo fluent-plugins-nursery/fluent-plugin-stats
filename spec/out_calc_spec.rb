@@ -77,6 +77,9 @@ describe Fluent::CalcOutput do
       driver.run { messages.each {|message| driver.emit(message, time) } }
       driver.instance.flush_emit(0)
     end
+    let(:empty_emit) do
+      driver.instance.flush_emit(0)
+    end
 
     context 'sum/max/min/avg' do
       let(:config) do
@@ -94,6 +97,28 @@ describe Fluent::CalcOutput do
         })
       end
       it { emit }
+    end
+
+    context 'zero_emit' do
+      let(:config) do
+        CONFIG + %[
+          sum _count$
+          max _max$
+          min _min$
+          avg _avg$
+          zero_emit true
+        ]
+      end
+      before do
+        Fluent::Engine.stub(:now).and_return(time)
+        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+          "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
+        })
+        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+          "4xx_count"=>0,"5xx_count"=>0,"reqtime_max"=>0,"reqtime_min"=>0,"reqtime_avg"=>0.0
+        })
+      end
+      it { emit; empty_emit }
     end
 
     context 'sum/max/min/avg_keys' do
