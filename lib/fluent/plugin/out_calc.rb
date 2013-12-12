@@ -21,7 +21,8 @@ class Fluent::CalcOutput < Fluent::Output
   config_param :avg_suffix, :string, :default => ""
   config_param :interval, :time, :default => 5
   config_param :tag, :string, :default => nil
-  config_param :add_tag_prefix, :string, :default => 'calc'
+  config_param :add_tag_prefix, :string, :default => nil
+  config_param :remove_tag_prefix, :string, :default => nil
   config_param :aggregate, :string, :default => 'tag'
   config_param :store_file, :string, :default => nil
   config_param :zero_emit, :bool, :default => false
@@ -52,6 +53,25 @@ class Fluent::CalcOutput < Fluent::Output
     when 'all'
       raise Fluent::ConfigError, "tag must be specified for aggregate all" if @tag.nil?
     end
+
+    if @tag.nil? and @add_tag_prefix.nil? and @remove_tag_prefix.nil?
+      @add_tag_prefix = 'calc' # not ConfigError for lower version compatibility
+    end
+
+    @tag_prefix = "#{@add_tag_prefix}." if @add_tag_prefix
+    @tag_prefix_match = "#{@remove_tag_prefix}." if @remove_tag_prefix
+    @tag_proc =
+      if @tag
+        Proc.new {|tag| @tag }
+      elsif @tag_prefix and @tag_prefix_match
+        Proc.new {|tag| "#{@tag_prefix}#{lstrip(tag, @tag_prefix_match)}" }
+      elsif @tag_prefix_match
+        Proc.new {|tag| lstrip(tag, @tag_prefix_match) }
+      elsif @tag_prefix
+        Proc.new {|tag| "#{@tag_prefix}#{tag}" }
+      else
+        Proc.new {|tag| tag }
+      end
 
     @matches = {}
     @mutex = Mutex.new
@@ -177,8 +197,8 @@ class Fluent::CalcOutput < Fluent::Output
     flushed_matches.keys.each do |tag|
       matches = flushed_matches[tag]
       output = generate_output(matches)
-      tag = @tag ? @tag : "#{@add_tag_prefix}.#{tag}"
-      Fluent::Engine.emit(tag, time, output) if output
+      emit_tag = @tag_proc.call(tag)
+      Fluent::Engine.emit(emit_tag, time, output) if output
     end
   end
 
@@ -281,6 +301,12 @@ class Fluent::CalcOutput < Fluent::Output
     rescue => e
       $log.warn "out_calc: Can't load store_file #{e.class} #{e.message}"
     end
+  end
+
+  private
+
+  def lstrip(string, substring)
+    string.index(substring) == 0 ? string[substring.size..-1] : string
   end
 
 end

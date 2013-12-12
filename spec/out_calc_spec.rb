@@ -199,6 +199,22 @@ describe Fluent::CalcOutput do
       it { emit }
     end
 
+    context 'remove_tag_prefix' do
+      let(:config) do
+        CONFIG + %[
+          remove_tag_prefix foo
+          sum _count$
+        ]
+      end
+      before do
+        Fluent::Engine.stub(:now).and_return(time)
+        Fluent::Engine.should_receive(:emit).with("bar", time, {
+          "4xx_count"=>6,"5xx_count"=>6
+        })
+      end
+      it { emit }
+    end
+
     context 'aggregate' do
       let(:emit) do
         driver.run { messages.each {|message| driver.emit_with_tag(message, time, 'foo.bar') } }
