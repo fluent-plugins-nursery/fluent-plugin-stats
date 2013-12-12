@@ -82,7 +82,11 @@ then output bocomes as belows:
 
 - add_tag_prefix
 
-    Add tag prefix for output message. 
+    Add tag prefix for output message. Default: 'calc'
+
+- remove_tag_prefix
+
+    Remove tag prefix for output message. 
 
 - aggragate
     

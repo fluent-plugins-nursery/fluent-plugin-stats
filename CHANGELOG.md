@@ -1,3 +1,9 @@
+## 0.2.0 (2013/12/12)
+
+Enhancement:
+
+- Add `remove_tag_prefix` option
+
 ## 0.1.2 (2013/10/10)
 
 Enhancement:
