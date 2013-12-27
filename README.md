@@ -1,12 +1,12 @@
-# fluent-plugin-stats [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-stats.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-stats) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-stats.png)](https://gemnasium.com/sonots/fluent-plugin-stats)
+# fluent-plugin-stats [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-stats.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-stats)
 
-Fluentd plugin to calculate statistics such as sum, max, min, avg (which was known as fluent-plugin-calc)
+Fluentd plugin to calculate statistics such as sum, max, min, avg.
 
 ## Configuration
 
 ### Example 1
 
-sum for xxx_count, max for xxx_max, min for xxx_min, avg for xxx_avg
+Get sum for xxx\_count, max for xxx\_max, min for xxx\_min, avg for xxx\_avg
 
     <match foo.**>
       type stats
@@ -30,7 +30,7 @@ then output bocomes as belows:
 
 ### Example 2
 
-sum, max, min, avg for the same key
+Get sum, max, min, avg for the same key
 
     <match foo.**>
       type stats
