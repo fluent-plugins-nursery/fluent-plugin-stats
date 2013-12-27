@@ -1,6 +1,6 @@
-# fluent-plugin-calc [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-calc.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-calc) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-calc.png)](https://gemnasium.com/sonots/fluent-plugin-calc)
+# fluent-plugin-stats [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-stats.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-stats) [![Dependency Status](https://gemnasium.com/sonots/fluent-plugin-stats.png)](https://gemnasium.com/sonots/fluent-plugin-stats)
 
-Simple fluentd plugin to calculate messages.
+Fluentd plugin to calculate statistics such as sum, max, min, avg (which was known as fluent-plugin-calc)
 
 ## Configuration
 
@@ -9,9 +9,9 @@ Simple fluentd plugin to calculate messages.
 sum for xxx_count, max for xxx_max, min for xxx_min, avg for xxx_avg
 
     <match foo.**>
-      type calc
+      type stats
       interval 5s
-      add_tag_prefix calc
+      add_tag_prefix stats
 
       sum .*_count$
       max .*_max$
@@ -26,16 +26,16 @@ Assuming following inputs are coming:
 
 then output bocomes as belows: 
 
-    calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
+    stats.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
 
 ### Example 2
 
 sum, max, min, avg for the same key
 
     <match foo.**>
-      type calc
+      type stats
       interval 5s
-      add_tag_prefix calc
+      add_tag_prefix stats
 
       sum ^reqtime$
       max ^reqtime$
@@ -54,7 +54,7 @@ Assuming following inputs are coming:
 
 then output bocomes as belows: 
 
-    calc.foo.bar: {"reqtime_sum":3.000,"reqtime_max":2.000,"reqtime_min":1.000,"reqtime_avg":1.500}
+    stats.foo.bar: {"reqtime_sum":3.000,"reqtime_max":2.000,"reqtime_min":1.000,"reqtime_avg":1.500}
 
 ## Parameters
 
@@ -82,7 +82,7 @@ then output bocomes as belows:
 
 - add_tag_prefix
 
-    Add tag prefix for output message. Default: 'calc'
+    Add tag prefix for output message. Default: 'stats'
 
 - remove_tag_prefix
 
@@ -90,7 +90,7 @@ then output bocomes as belows:
 
 - aggragate
     
-    Calculate by each `tag` or `all`. The default value is `tag`.
+    Statsulate by each `tag` or `all`. The default value is `tag`.
 
 - store_file
 
@@ -100,9 +100,9 @@ then output bocomes as belows:
 
     Emit 0 on the next interval. This is useful for some software which requires to reset data such as [GrowthForecast](http://kazeburo.github.io/GrowthForecast/) . 
 
-        calc.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
+        stats.foo.bar: {"4xx_count":5,"5xx_count":4","reqtime_max":24831,"reqtime_min":10,"reqtime_avg":270.46}
         # after @interval later
-        calc.foo.bar: {"4xx_count":0,"5xx_count":0","reqtime_max":0,"reqtime_min":0,"reqtime_avg":0}
+        stats.foo.bar: {"4xx_count":0,"5xx_count":0","reqtime_max":0,"reqtime_min":0,"reqtime_avg":0}
 
 ## ChangeLog
 
@@ -122,5 +122,5 @@ Get the number of denominator to calculate `avg` from input json field.
 
 ## Copyright
 
-Copyright (c) 2013 Naotoshi SEO. See [LICENSE](LICENSE) for details.
+Copyright (c) 2013 Naotoshi Seo. See [LICENSE](LICENSE) for details.
 

@@ -1,6 +1,6 @@
 # encoding: UTF-8
-class Fluent::CalcOutput < Fluent::Output
-  Fluent::Plugin.register_output('calc', self)
+class Fluent::StatsOutput < Fluent::Output
+  Fluent::Plugin.register_output('stats', self)
 
   def initialize
     super
@@ -55,7 +55,7 @@ class Fluent::CalcOutput < Fluent::Output
     end
 
     if @tag.nil? and @add_tag_prefix.nil? and @remove_tag_prefix.nil?
-      @add_tag_prefix = 'calc' # not ConfigError for lower version compatibility
+      @add_tag_prefix = 'stats' # not ConfigError for lower version compatibility
     end
 
     @tag_prefix = "#{@add_tag_prefix}." if @add_tag_prefix
@@ -111,7 +111,7 @@ class Fluent::CalcOutput < Fluent::Output
   # Called when new line comes. This method actually does not emit
   def emit(tag, es, chain)
     tag = 'all' if @aggregate == 'all'
-    # calc
+    # stats
     matches = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
     es.each do |time, record|
       @sum_keys.each do |key|
@@ -255,7 +255,7 @@ class Fluent::CalcOutput < Fluent::Output
         }, f)
       end
     rescue => e
-      $log.warn "out_calc: Can't write store_file #{e.class} #{e.message}"
+      $log.warn "out_stats: Can't write store_file #{e.class} #{e.message}"
     end
   end
 
@@ -276,7 +276,7 @@ class Fluent::CalcOutput < Fluent::Output
           stored[:avg] == @avg
 
           if !stored[:matches].empty? and !stored[:matches].first[1].has_key?(:max)
-            $log.warn "out_calc: stored data does not have compatibility with the current version. ignore stored data"
+            $log.warn "out_stats: stored data does not have compatibility with the current version. ignore stored data"
             return
           end
 
@@ -292,14 +292,14 @@ class Fluent::CalcOutput < Fluent::Output
             # skip the saved duration to continue counting
             @last_checked = Fluent::Engine.now - @saved_duration
           else
-            $log.warn "out_calc: stored data is outdated. ignore stored data"
+            $log.warn "out_stats: stored data is outdated. ignore stored data"
           end
         else
-          $log.warn "out_calc: configuration param was changed. ignore stored data"
+          $log.warn "out_stats: configuration param was changed. ignore stored data"
         end
       end
     rescue => e
-      $log.warn "out_calc: Can't load store_file #{e.class} #{e.message}"
+      $log.warn "out_stats: Can't load store_file #{e.class} #{e.message}"
     end
   end
 

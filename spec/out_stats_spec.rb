@@ -8,11 +8,11 @@ class Fluent::Test::OutputTestDriver
   end
 end
 
-describe Fluent::CalcOutput do
+describe Fluent::StatsOutput do
   before { Fluent::Test.setup }
   CONFIG = %[]
   let(:tag) { 'foo.bar' }
-  let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::CalcOutput, tag).configure(config) }
+  let(:driver) { Fluent::Test::OutputTestDriver.new(Fluent::StatsOutput, tag).configure(config) }
 
   describe 'test configure' do
     describe 'bad configuration' do
@@ -58,7 +58,7 @@ describe Fluent::CalcOutput do
         let(:config) { CONFIG }
         its(:interval) { should == 5 }
         its(:tag) { should be_nil }
-        its(:add_tag_prefix) { should == 'calc' }
+        its(:add_tag_prefix) { should == 'stats' }
         its(:aggregate) { should == 'tag' }
       end
     end
@@ -92,7 +92,7 @@ describe Fluent::CalcOutput do
       end
       before do
         Fluent::Engine.stub(:now).and_return(time)
-        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+        Fluent::Engine.should_receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
         })
       end
@@ -111,10 +111,10 @@ describe Fluent::CalcOutput do
       end
       before do
         Fluent::Engine.stub(:now).and_return(time)
-        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+        Fluent::Engine.should_receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
         })
-        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+        Fluent::Engine.should_receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>0,"5xx_count"=>0,"reqtime_max"=>0,"reqtime_min"=>0,"reqtime_avg"=>0.0
         })
       end
@@ -132,7 +132,7 @@ describe Fluent::CalcOutput do
       end
       before do
         Fluent::Engine.stub(:now).and_return(time)
-        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+        Fluent::Engine.should_receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
         })
       end
@@ -160,7 +160,7 @@ describe Fluent::CalcOutput do
     end
       before do
         Fluent::Engine.stub(:now).and_return(time)
-        Fluent::Engine.should_receive(:emit).with("calc.#{tag}", time, {
+        Fluent::Engine.should_receive(:emit).with("stats.#{tag}", time, {
           "reqtime_sum"=>3.000,"reqtime_max"=>2.000,"reqtime_min"=>1.000,"reqtime_avg"=>1.500,"reqsize_sum"=>30
         })
       end
@@ -246,7 +246,7 @@ describe Fluent::CalcOutput do
         let(:config) do
           CONFIG + %[
           aggregate tag
-          add_tag_prefix calc
+          add_tag_prefix stats
           sum _count$
           max _max$
           min _min$
@@ -255,10 +255,10 @@ describe Fluent::CalcOutput do
         end
         before do
           Fluent::Engine.stub(:now).and_return(time)
-          Fluent::Engine.should_receive(:emit).with("calc.foo.bar", time, {
+          Fluent::Engine.should_receive(:emit).with("stats.foo.bar", time, {
             "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
           })
-          Fluent::Engine.should_receive(:emit).with("calc.foo.bar2", time, {
+          Fluent::Engine.should_receive(:emit).with("stats.foo.bar2", time, {
             "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
           })
         end

@@ -2,15 +2,16 @@
 $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
-  s.name        = "fluent-plugin-calc"
+  s.name        = "fluent-plugin-stats"
   s.version     = "0.2.0"
   s.authors     = ["Naotoshi Seo"]
   s.email       = ["sonots@gmail.com"]
-  s.homepage    = "https://github.com/sonots/fluent-plugin-calc"
-  s.summary     = "Fluentd plugin to calcucate statistics in messages"
+  s.homepage    = "https://github.com/sonots/fluent-plugin-stats"
+  s.summary     = "Fluentd plugin to calculate statistics such as sum, max, min, avg"
   s.description = s.summary
+  s.licenses    = ["MIT"]
 
-  s.rubyforge_project = "fluent-plugin-calc"
+  s.rubyforge_project = "fluent-plugin-stats"
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
