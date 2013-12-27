@@ -1,3 +1,9 @@
+## 0.3.0 (2013/12/27)
+
+Changes
+
+- Rename fluent-plugin-stats from fluent-plugin-calc
+
 ## 0.2.0 (2013/12/12)
 
 Enhancement:
