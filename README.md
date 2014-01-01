@@ -90,7 +90,7 @@ then output bocomes as belows:
 
 - aggragate
     
-    Statsulate by each `tag` or `all`. The default value is `tag`.
+    Calculate by each `tag` or `all`. The default value is `tag`.
 
 - store_file
 
