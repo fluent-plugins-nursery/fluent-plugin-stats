@@ -198,7 +198,7 @@ class Fluent::StatsOutput < Fluent::Output
       matches = flushed_matches[tag]
       output = generate_output(matches)
       emit_tag = @tag_proc.call(tag)
-      Fluent::Engine.emit(emit_tag, time, output) if output
+      Fluent::Engine.emit(emit_tag, time, output) if output and !output.empty?
     end
   end
 
