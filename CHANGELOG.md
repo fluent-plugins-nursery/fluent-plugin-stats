@@ -1,3 +1,9 @@
+## 0.3.1 (2014/01/02)
+
+Fixes
+
+- Trivial fix not to emit empty {} message
+
 ## 0.3.0 (2013/12/27)
 
 Changes
