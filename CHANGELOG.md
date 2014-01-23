@@ -1,3 +1,9 @@
+## 0.3.2 (2014/01/24)
+
+Fixes
+
+- Fix the case when input record keys are symbols
+
 ## 0.3.1 (2014/01/02)
 
 Fixes
