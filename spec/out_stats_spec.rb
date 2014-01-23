@@ -70,15 +70,15 @@ describe Fluent::StatsOutput do
       [
         {"4xx_count"=>"1","5xx_count"=>2,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3},
         {"4xx_count"=>"2","5xx_count"=>2,"reqtime_max"=>5,"reqtime_min"=>2,"reqtime_avg"=>2},
-        {"4xx_count"=>"3","5xx_count"=>2,"reqtime_max"=>1,"reqtime_min"=>3,"reqtime_avg"=>4},
+        {:'4xx_count'=>"3",:'5xx_count'=>2,:reqtime_max=>1,:reqtime_min=>3,:reqtime_avg=>4},
       ]
     end
     let(:emit) do
       driver.run { messages.each {|message| driver.emit(message, time) } }
-      driver.instance.flush_emit(0)
+      driver.instance.flush_emit
     end
     let(:empty_emit) do
-      driver.instance.flush_emit(0)
+      driver.instance.flush_emit
     end
 
     context 'sum/max/min/avg' do
@@ -219,7 +219,7 @@ describe Fluent::StatsOutput do
       let(:emit) do
         driver.run { messages.each {|message| driver.emit_with_tag(message, time, 'foo.bar') } }
         driver.run { messages.each {|message| driver.emit_with_tag(message, time, 'foo.bar2') } }
-        driver.instance.flush_emit(0)
+        driver.instance.flush_emit
       end
 
       context 'aggregate all' do

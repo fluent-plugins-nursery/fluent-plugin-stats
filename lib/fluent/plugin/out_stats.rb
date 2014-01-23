@@ -114,6 +114,7 @@ class Fluent::StatsOutput < Fluent::Output
     # stats
     matches = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
     es.each do |time, record|
+      record = stringify_keys(record)
       @sum_keys.each do |key|
         next unless record[key] and value = record[key].to_f
         matches[:sum][key] = sum(matches[:sum][key], value)
@@ -131,6 +132,7 @@ class Fluent::StatsOutput < Fluent::Output
         matches[:avg][key] = sum(matches[:avg][key], value)
       end
       record.keys.each do |key|
+        key = key.to_s
         value = record[key].to_f
         if @sum and @sum.match(key)
           matches[:sum][key] = sum(matches[:sum][key], value)
@@ -175,13 +177,11 @@ class Fluent::StatsOutput < Fluent::Output
   def watcher
     # instance variable, and public accessable, for test
     @last_checked ||= Fluent::Engine.now
-    while true
-      sleep 0.5
+    while (sleep 0.1)
       begin
         if Fluent::Engine.now - @last_checked >= @interval
-          now = Fluent::Engine.now
-          flush_emit(now - @last_checked)
-          @last_checked = now
+          @last_checked = Fluent::Engine.now
+          flush_emit
         end
       rescue => e
         $log.warn "#{e.class} #{e.message} #{e.backtrace.first}"
@@ -190,7 +190,7 @@ class Fluent::StatsOutput < Fluent::Output
   end
 
   # This method is the real one to emit
-  def flush_emit(step)
+  def flush_emit
     time = Fluent::Engine.now
     flushed_matches, @matches = @matches, initial_matches(@matches)
 
@@ -304,6 +304,17 @@ class Fluent::StatsOutput < Fluent::Output
   end
 
   private
+  def transform_keys(hash)
+    result = {}
+    hash.each_key do |key|
+      result[yield(key)] = hash[key]
+    end
+    result
+  end
+
+  def stringify_keys(hash)
+    transform_keys(hash) { |key| key.to_s }
+  end
 
   def lstrip(string, substring)
     string.index(substring) == 0 ? string[substring.size..-1] : string
