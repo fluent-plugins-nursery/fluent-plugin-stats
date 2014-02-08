@@ -1,4 +1,4 @@
-# fluent-plugin-stats [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-stats.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-stats)
+# fluent-plugin-stats, a plugin for [Fluentd](http://fluentd.org) [![Build Status](https://secure.travis-ci.org/sonots/fluent-plugin-stats.png?branch=master)](http://travis-ci.org/sonots/fluent-plugin-stats)
 
 Fluentd plugin to calculate statistics such as sum, max, min, avg.
 
