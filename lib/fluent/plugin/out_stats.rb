@@ -115,6 +115,7 @@ class Fluent::StatsOutput < Fluent::Output
 
   # Called when new line comes. This method actually does not emit
   def emit(tag, es, chain)
+    _tag = tag
     tag = 'all' if @aggregate == 'all'
     # stats
     matches = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
@@ -173,23 +174,25 @@ class Fluent::StatsOutput < Fluent::Output
       @matches[tag][:count] += matches[:count]
     end
 
+    log.trace "out_stats: tag:#{_tag} @matches:#{@matches}"
+
     chain.next
   rescue => e
-    log.warn "#{e.class} #{e.message} #{e.backtrace.first}"
+    log.warn "out_stats: #{e.class} #{e.message} #{e.backtrace.first}"
   end
 
   # thread callback
   def watcher
     # instance variable, and public accessable, for test
     @last_checked ||= Fluent::Engine.now
-    while (sleep 0.1)
+    while (sleep 0.5)
       begin
         if Fluent::Engine.now - @last_checked >= @interval
           @last_checked = Fluent::Engine.now
           flush_emit
         end
       rescue => e
-        log.warn "#{e.class} #{e.message} #{e.backtrace.first}"
+        log.warn "out_stats: #{e.class} #{e.message} #{e.backtrace.first}"
       end
     end
   end
@@ -203,6 +206,7 @@ class Fluent::StatsOutput < Fluent::Output
       matches = flushed_matches[tag]
       output = generate_output(matches)
       emit_tag = @tag_proc.call(tag)
+      log.debug "out_stats: emit_tag:#{emit_tag} flushed_matches:#{flushed_matches}"
       Fluent::Engine.emit(emit_tag, time, output) if output and !output.empty?
     end
   end
