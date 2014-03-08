@@ -188,8 +188,10 @@ class Fluent::StatsOutput < Fluent::Output
     while (sleep 0.5)
       begin
         if Fluent::Engine.now - @last_checked >= @interval
-          @last_checked = Fluent::Engine.now
-          flush_emit
+          report_time do
+            @last_checked = Fluent::Engine.now
+            flush_emit
+          end
         end
       rescue => e
         log.warn "out_stats: #{e.class} #{e.message} #{e.backtrace.first}"
@@ -200,14 +202,18 @@ class Fluent::StatsOutput < Fluent::Output
   # This method is the real one to emit
   def flush_emit
     time = Fluent::Engine.now
-    flushed_matches, @matches = @matches, initial_matches(@matches)
+    flushed_matches = {}
+    @mutex.synchronize do
+      flushed_matches, @matches = @matches, initial_matches(@matches)
+    end
+    log.trace("out_stats: flushed_matches:#{flushed_matches} @matches:#{@matches}") unless flushed_matches.empty?
 
-    flushed_matches.keys.each do |tag|
-      matches = flushed_matches[tag]
-      output = generate_output(matches)
+    flushed_matches.each do |tag, matches|
       emit_tag = @tag_proc.call(tag)
-      log.debug "out_stats: emit_tag:#{emit_tag} flushed_matches:#{flushed_matches}"
-      Fluent::Engine.emit(emit_tag, time, output) if output and !output.empty?
+      report_time(" emit_tag:#{emit_tag} matches:#{matches}") do
+        output = generate_output(matches)
+        Fluent::Engine.emit(emit_tag, time, output) if output and !output.empty?
+      end
     end
   end
 
@@ -329,4 +335,10 @@ class Fluent::StatsOutput < Fluent::Output
     string.index(substring) == 0 ? string[substring.size..-1] : string
   end
 
+  def report_time(msg = nil, &blk)
+    t = Time.now
+    output = yield
+    log.debug sprintf("out_stats: elapsed_time:%.2f thread_id:%s%s caller:%s", (Time.now - t).to_f, Thread.current.object_id, msg, caller()[0])
+    output
+  end
 end
