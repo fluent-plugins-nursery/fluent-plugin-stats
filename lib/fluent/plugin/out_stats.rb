@@ -28,6 +28,8 @@ class Fluent::StatsOutput < Fluent::Output
   config_param :tag, :string, :default => nil
   config_param :add_tag_prefix, :string, :default => nil
   config_param :remove_tag_prefix, :string, :default => nil
+  config_param :add_tag_suffix, :string, :default => nil
+  config_param :remove_tag_suffix, :string, :default => nil
   config_param :aggregate, :string, :default => 'tag'
   config_param :store_file, :string, :default => nil
   config_param :zero_emit, :bool, :default => false
@@ -59,24 +61,10 @@ class Fluent::StatsOutput < Fluent::Output
       raise Fluent::ConfigError, "tag must be specified for aggregate all" if @tag.nil?
     end
 
-    if @tag.nil? and @add_tag_prefix.nil? and @remove_tag_prefix.nil?
+    if @tag.nil? and @add_tag_prefix.nil? and @remove_tag_prefix.nil? and @add_tag_suffix.nil? and @remove_tag_suffix.nil?
       @add_tag_prefix = 'stats' # not ConfigError for lower version compatibility
     end
-
-    @tag_prefix = "#{@add_tag_prefix}." if @add_tag_prefix
-    @tag_prefix_match = "#{@remove_tag_prefix}." if @remove_tag_prefix
-    @tag_proc =
-      if @tag
-        Proc.new {|tag| @tag }
-      elsif @tag_prefix and @tag_prefix_match
-        Proc.new {|tag| "#{@tag_prefix}#{lstrip(tag, @tag_prefix_match)}" }
-      elsif @tag_prefix_match
-        Proc.new {|tag| lstrip(tag, @tag_prefix_match) }
-      elsif @tag_prefix
-        Proc.new {|tag| "#{@tag_prefix}#{tag}" }
-      else
-        Proc.new {|tag| tag }
-      end
+    @tag_proc = tag_proc
 
     @matches = {}
     @mutex = Mutex.new
@@ -331,8 +319,25 @@ class Fluent::StatsOutput < Fluent::Output
     transform_keys(hash) { |key| key.to_s }
   end
 
-  def lstrip(string, substring)
-    string.index(substring) == 0 ? string[substring.size..-1] : string
+  def tag_proc
+    rstrip = Proc.new {|str, substr| str.chomp(substr) }
+    lstrip = Proc.new {|str, substr| str.start_with?(substr) ? str[substr.size..-1] : str }
+    tag_prefix = "#{rstrip.call(@add_tag_prefix, '.')}." if @add_tag_prefix
+    tag_suffix = ".#{lstrip.call(@add_tag_suffix, '.')}" if @add_tag_suffix
+    tag_prefix_match = "#{rstrip.call(@remove_tag_prefix, '.')}." if @remove_tag_prefix
+    tag_suffix_match = ".#{lstrip.call(@remove_tag_suffix, '.')}" if @remove_tag_suffix
+    tag_fixed = @tag if @tag
+    if tag_fixed
+      Proc.new {|tag| tag_fixed }
+    elsif tag_prefix_match and tag_suffix_match
+      Proc.new {|tag| "#{tag_prefix}#{rstrip.call(lstrip.call(tag, tag_prefix_match), tag_suffix_match)}#{tag_suffix}" }
+    elsif tag_prefix_match
+      Proc.new {|tag| "#{tag_prefix}#{lstrip.call(tag, tag_prefix_match)}#{tag_suffix}" }
+    elsif tag_suffix_match
+      Proc.new {|tag| "#{tag_prefix}#{rstrip.call(tag, tag_suffix_match)}#{tag_suffix}" }
+    else
+      Proc.new {|tag| "#{tag_prefix}#{tag}#{tag_suffix}" }
+    end
   end
 
   def report_time(msg = nil, &blk)

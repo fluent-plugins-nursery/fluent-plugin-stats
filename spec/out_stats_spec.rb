@@ -190,6 +190,7 @@ describe Fluent::StatsOutput do
           sum _count$
         ]
       end
+      let(:tag) { 'foo.bar' }
       before do
         Fluent::Engine.stub(:now).and_return(time)
         Fluent::Engine.should_receive(:emit).with("foo.#{tag}", time, {
@@ -206,9 +207,44 @@ describe Fluent::StatsOutput do
           sum _count$
         ]
       end
+      let(:tag) { 'foo.bar' }
       before do
         Fluent::Engine.stub(:now).and_return(time)
         Fluent::Engine.should_receive(:emit).with("bar", time, {
+          "4xx_count"=>6,"5xx_count"=>6
+        })
+      end
+      it { emit }
+    end
+
+    context 'add_tag_suffix' do
+      let(:config) do
+        CONFIG + %[
+          add_tag_suffix foo
+          sum _count$
+        ]
+      end
+      let(:tag) { 'foo.bar' }
+      before do
+        Fluent::Engine.stub(:now).and_return(time)
+        Fluent::Engine.should_receive(:emit).with("#{tag}.foo", time, {
+          "4xx_count"=>6,"5xx_count"=>6
+        })
+      end
+      it { emit }
+    end
+
+    context 'remove_tag_suffix' do
+      let(:config) do
+        CONFIG + %[
+          remove_tag_suffix bar
+          sum _count$
+        ]
+      end
+      let(:tag) { 'foo.bar' }
+      before do
+        Fluent::Engine.stub(:now).and_return(time)
+        Fluent::Engine.should_receive(:emit).with("foo", time, {
           "4xx_count"=>6,"5xx_count"=>6
         })
       end

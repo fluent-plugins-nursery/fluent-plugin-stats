@@ -88,6 +88,14 @@ then output bocomes as belows:
 
     Remove tag prefix for output message. 
 
+- add_tag_suffix
+
+    Add tag suffix for output message.
+
+- remove_tag_suffix
+
+    Remove tag suffix for output message. 
+
 - aggragate
     
     Calculate by each `tag` or `all`. The default value is `tag`.
