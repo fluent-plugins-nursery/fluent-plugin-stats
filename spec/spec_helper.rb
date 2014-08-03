@@ -6,6 +6,7 @@ Bundler.require(:default, :test)
 
 require 'fluent/test'
 require 'rspec'
+require 'rspec/its'
 require 'pry'
 
 $TESTING=true
