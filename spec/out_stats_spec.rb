@@ -59,7 +59,7 @@ describe Fluent::StatsOutput do
         its(:interval) { should == 5 }
         its(:tag) { should be_nil }
         its(:add_tag_prefix) { should == 'stats' }
-        its(:aggregate) { should == 'tag' }
+        its(:aggregate) { should == 'in_tag' }
       end
     end
   end
@@ -251,6 +251,23 @@ describe Fluent::StatsOutput do
       it { emit }
     end
 
+    context 'remove_tag_slice' do
+      let(:config) do
+        CONFIG + %[
+          remove_tag_slice 0..-2
+          sum _count$
+        ]
+      end
+      let(:tag) { 'foo.bar' }
+      before do
+        allow(Fluent::Engine).to receive(:now).and_return(time)
+        expect(Fluent::Engine).to receive(:emit).with("foo", time, {
+          "4xx_count"=>6,"5xx_count"=>6
+        })
+      end
+      it { emit }
+    end
+
     context 'aggregate' do
       let(:emit) do
         driver.run { messages.each {|message| driver.emit_with_tag(message, time, 'foo.bar') } }
@@ -278,7 +295,7 @@ describe Fluent::StatsOutput do
         it { emit }
       end
 
-      context 'aggregate tag' do
+      context 'aggregate in_tag' do
         let(:config) do
           CONFIG + %[
           aggregate tag
@@ -296,6 +313,27 @@ describe Fluent::StatsOutput do
           })
           expect(Fluent::Engine).to receive(:emit).with("stats.foo.bar2", time, {
             "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
+          })
+        end
+        it { emit }
+      end
+
+      context 'aggregate out_tag' do
+        let(:config) do
+          CONFIG + %[
+          aggregate out_tag
+          remove_tag_slice 0..-2
+          add_tag_prefix stats
+          sum _count$
+          max _max$
+          min _min$
+          avg _avg$
+          ]
+        end
+        before do
+          allow(Fluent::Engine).to receive(:now).and_return(time)
+          expect(Fluent::Engine).to receive(:emit).with("stats.foo", time, {
+            "4xx_count"=>12,"5xx_count"=>12,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
           })
         end
         it { emit }
