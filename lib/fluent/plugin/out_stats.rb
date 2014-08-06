@@ -30,7 +30,8 @@ class Fluent::StatsOutput < Fluent::Output
   config_param :remove_tag_prefix, :string, :default => nil
   config_param :add_tag_suffix, :string, :default => nil
   config_param :remove_tag_suffix, :string, :default => nil
-  config_param :aggregate, :string, :default => 'tag'
+  config_param :remove_tag_slice, :string, :default => nil
+  config_param :aggregate, :string, :default => 'in_tag'
   config_param :store_file, :string, :default => nil
   config_param :zero_emit, :bool, :default => false
 
@@ -52,19 +53,23 @@ class Fluent::StatsOutput < Fluent::Output
     @min_keys = @min_keys ? @min_keys.split(',') : []
     @avg_keys = @avg_keys ? @avg_keys.split(',') : []
 
-    unless ['tag', 'all'].include?(@aggregate)
-      raise Fluent::ConfigError, "aggregate allows tag/all"
-    end
-
     case @aggregate
+    when 'tag' # obsolete
+      @aggregate = 'in_tag'
     when 'all'
       raise Fluent::ConfigError, "tag must be specified for aggregate all" if @tag.nil?
     end
 
-    if @tag.nil? and @add_tag_prefix.nil? and @remove_tag_prefix.nil? and @add_tag_suffix.nil? and @remove_tag_suffix.nil?
+    unless ['in_tag', 'out_tag', 'all'].include?(@aggregate)
+      raise Fluent::ConfigError, "aggregate allows in_tag/out_tag/all"
+    end
+
+    if @tag.nil? and @add_tag_prefix.nil? and @remove_tag_prefix.nil? and @add_tag_suffix.nil? and @remove_tag_suffix.nil? and @remove_tag_slice.nil?
       @add_tag_prefix = 'stats' # not ConfigError for lower version compatibility
     end
     @tag_proc = tag_proc
+
+    @aggregate_proc = aggregate_proc(@tag_proc)
 
     @matches = {}
     @mutex = Mutex.new
@@ -73,14 +78,14 @@ class Fluent::StatsOutput < Fluent::Output
   def initial_matches(prev_matches = nil)
     if @zero_emit && prev_matches
       matches = {}
-      prev_matches.keys.each do |tag|
-        next unless prev_matches[tag][:count] > 0 # Prohibit to emit anymore
-        matches[tag] = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
+      prev_matches.keys.each do |aggregate_key|
+        next unless prev_matches[aggregate_key][:count] > 0 # Prohibit to emit anymore
+        matches[aggregate_key] = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
         # ToDo: would want default configuration for :max, :min
-        prev_matches[tag][:sum].keys.each {|key| matches[tag][:sum][key] = 0 }
-        prev_matches[tag][:max].keys.each {|key| matches[tag][:max][key] = 0 }
-        prev_matches[tag][:min].keys.each {|key| matches[tag][:min][key] = 0 }
-        prev_matches[tag][:avg].keys.each {|key| matches[tag][:avg][key] = 0 }
+        prev_matches[aggregate_key][:sum].keys.each {|key| matches[aggregate_key][:sum][key] = 0 }
+        prev_matches[aggregate_key][:max].keys.each {|key| matches[aggregate_key][:max][key] = 0 }
+        prev_matches[aggregate_key][:min].keys.each {|key| matches[aggregate_key][:min][key] = 0 }
+        prev_matches[aggregate_key][:avg].keys.each {|key| matches[aggregate_key][:avg][key] = 0 }
       end
       matches
     else
@@ -103,8 +108,6 @@ class Fluent::StatsOutput < Fluent::Output
 
   # Called when new line comes. This method actually does not emit
   def emit(tag, es, chain)
-    _tag = tag
-    tag = 'all' if @aggregate == 'all'
     # stats
     matches = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
     es.each do |time, record|
@@ -144,25 +147,27 @@ class Fluent::StatsOutput < Fluent::Output
       matches[:count] += 1
     end
 
+    aggregate_key = @aggregate_proc.call(tag)
+
     # thread safe merge
-    @matches[tag] ||= { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
+    @matches[aggregate_key] ||= { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
     @mutex.synchronize do
       matches[:sum].keys.each do |key|
-        @matches[tag][:sum][key] = sum(@matches[tag][:sum][key], matches[:sum][key])
+        @matches[aggregate_key][:sum][key] = sum(@matches[aggregate_key][:sum][key], matches[:sum][key])
       end
       matches[:max].keys.each do |key|
-        @matches[tag][:max][key] = max(@matches[tag][:max][key], matches[:max][key])
+        @matches[aggregate_key][:max][key] = max(@matches[aggregate_key][:max][key], matches[:max][key])
       end
       matches[:min].keys.each do |key|
-        @matches[tag][:min][key] = min(@matches[tag][:min][key], matches[:min][key])
+        @matches[aggregate_key][:min][key] = min(@matches[aggregate_key][:min][key], matches[:min][key])
       end
       matches[:avg].keys.each do |key|
-        @matches[tag][:avg][key] = sum(@matches[tag][:avg][key], matches[:avg][key]) # sum yet
+        @matches[aggregate_key][:avg][key] = sum(@matches[aggregate_key][:avg][key], matches[:avg][key]) # sum yet
       end
-      @matches[tag][:count] += matches[:count]
+      @matches[aggregate_key][:count] += matches[:count]
     end
 
-    log.trace "out_stats: tag:#{_tag} @matches:#{@matches}"
+    log.trace "out_stats: tag:#{tag} @matches:#{@matches}"
 
     chain.next
   rescue => e
@@ -197,7 +202,15 @@ class Fluent::StatsOutput < Fluent::Output
     log.trace("out_stats: flushed_matches:#{flushed_matches} @matches:#{@matches}") unless flushed_matches.empty?
 
     flushed_matches.each do |tag, matches|
-      emit_tag = @tag_proc.call(tag)
+      case @aggregate
+      when 'all'
+        emit_tag = @tag
+      when 'in_tag'
+        emit_tag = @tag_proc.call(tag)
+      when 'out_tag'
+        emit_tag = tag
+      else
+      end
       report_time(" emit_tag:#{emit_tag} matches:#{matches}") do
         output = generate_output(matches)
         Fluent::Engine.emit(emit_tag, time, output) if output and !output.empty?
@@ -319,7 +332,30 @@ class Fluent::StatsOutput < Fluent::Output
     transform_keys(hash) { |key| key.to_s }
   end
 
+  def aggregate_proc(tag_proc)
+    case @aggregate
+    when 'all'
+      Proc.new {|tag| :all }
+    when 'in_tag'
+      Proc.new {|tag| tag }
+    when 'out_tag'
+      Proc.new {|tag| tag_proc.call(tag) }
+    end
+  end
+
   def tag_proc
+    tag_slice_proc =
+      if @remove_tag_slice
+        lindex, rindex = @remove_tag_slice.split('..', 2)
+        if lindex.nil? or rindex.nil? or lindex !~ /^-?\d+$/ or rindex !~ /^-?\d+$/
+          raise Fluent::ConfigError, "out_grepcounter: remove_tag_slice must be formatted like [num]..[num]"
+        end
+        l, r = lindex.to_i, rindex.to_i
+        Proc.new {|tag| (tags = tag.split('.')[l..r]).nil? ? "" : tags.join('.') }
+      else
+        Proc.new {|tag| tag }
+      end
+
     rstrip = Proc.new {|str, substr| str.chomp(substr) }
     lstrip = Proc.new {|str, substr| str.start_with?(substr) ? str[substr.size..-1] : str }
     tag_prefix = "#{rstrip.call(@add_tag_prefix, '.')}." if @add_tag_prefix
@@ -327,16 +363,16 @@ class Fluent::StatsOutput < Fluent::Output
     tag_prefix_match = "#{rstrip.call(@remove_tag_prefix, '.')}." if @remove_tag_prefix
     tag_suffix_match = ".#{lstrip.call(@remove_tag_suffix, '.')}" if @remove_tag_suffix
     tag_fixed = @tag if @tag
-    if tag_fixed
-      Proc.new {|tag| tag_fixed }
-    elsif tag_prefix_match and tag_suffix_match
-      Proc.new {|tag| "#{tag_prefix}#{rstrip.call(lstrip.call(tag, tag_prefix_match), tag_suffix_match)}#{tag_suffix}" }
+    if tag_prefix_match and tag_suffix_match
+      Proc.new {|tag| "#{tag_prefix}#{rstrip.call(lstrip.call(tag_slice_proc.call(tag), tag_prefix_match), tag_suffix_match)}#{tag_suffix}" }
     elsif tag_prefix_match
-      Proc.new {|tag| "#{tag_prefix}#{lstrip.call(tag, tag_prefix_match)}#{tag_suffix}" }
+      Proc.new {|tag| "#{tag_prefix}#{lstrip.call(tag_slice_proc.call(tag), tag_prefix_match)}#{tag_suffix}" }
     elsif tag_suffix_match
-      Proc.new {|tag| "#{tag_prefix}#{rstrip.call(tag, tag_suffix_match)}#{tag_suffix}" }
+      Proc.new {|tag| "#{tag_prefix}#{rstrip.call(tag_slice_proc.call(tag), tag_suffix_match)}#{tag_suffix}" }
+    elsif tag_prefix || @remove_tag_slice || tag_suffix
+      Proc.new {|tag| "#{tag_prefix}#{tag_slice_proc.call(tag)}#{tag_suffix}" }
     else
-      Proc.new {|tag| "#{tag_prefix}#{tag}#{tag_suffix}" }
+      Proc.new {|tag| tag_fixed }
     end
   end
 

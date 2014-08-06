@@ -96,9 +96,23 @@ then output bocomes as belows:
 
     Remove tag suffix for output message. 
 
-- aggragate
-    
-    Calculate by each `tag` or `all`. The default value is `tag`.
+* remove_tag_slice *min..max*
+
+    Remove tag parts by slice function. FYI: This option behaves like `tag.split('.').slice(min..max)`.
+
+    For example,
+
+        remove_tag_slice 0..-2
+
+    changes an input tag `foo.bar.host1` to `foo.bar`.
+
+* aggregate
+
+    Aggregation unit. One of `all`, `in_tag`, `out_tag` can be specified. Default is `in_tag`.
+
+    * `all` calculate stats for all input messages and emit one message in each interval.
+    * `in_tag` calculate stats for each input tag seperately.
+    * `out_tag` calculate stats for for each tag *modified* by `add_tag_prefix`, `remove_tag_prefix`, or `remove_tag_slice`.
 
 - store_file
 
