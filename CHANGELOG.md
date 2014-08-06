@@ -1,3 +1,10 @@
+## 0.3.5 (2014/08/07)
+
+Enhancements:
+
+* Add `remove_tag_slice` option
+* Add `aggregate out_tag` option
+
 ## 0.3.4 (2014/04/12)
 
 Enhancements:
