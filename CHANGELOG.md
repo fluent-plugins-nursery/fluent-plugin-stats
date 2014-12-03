@@ -1,3 +1,10 @@
+## 0.3.6 (2014/12/3)
+
+Enhancements:
+
+* Do not compute average for zero_emit message
+  * ToDo: Still, we should get the denominator to compute average from input json field
+
 ## 0.3.5 (2014/08/07)
 
 Enhancements:
