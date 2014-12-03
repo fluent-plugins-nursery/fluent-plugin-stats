@@ -80,12 +80,14 @@ class Fluent::StatsOutput < Fluent::Output
       matches = {}
       prev_matches.keys.each do |aggregate_key|
         next unless prev_matches[aggregate_key][:count] > 0 # Prohibit to emit anymore
-        matches[aggregate_key] = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
+        matches[aggregate_key] = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {}, :avg_count => {} }
         # ToDo: would want default configuration for :max, :min
         prev_matches[aggregate_key][:sum].keys.each {|key| matches[aggregate_key][:sum][key] = 0 }
         prev_matches[aggregate_key][:max].keys.each {|key| matches[aggregate_key][:max][key] = 0 }
         prev_matches[aggregate_key][:min].keys.each {|key| matches[aggregate_key][:min][key] = 0 }
         prev_matches[aggregate_key][:avg].keys.each {|key| matches[aggregate_key][:avg][key] = 0 }
+        prev_matches[aggregate_key][:avg_count] ||= {} # for lower version compatibility
+        prev_matches[aggregate_key][:avg_count].keys.each {|key| matches[aggregate_key][:avg_count][key] = 0 }
       end
       matches
     else
@@ -109,7 +111,7 @@ class Fluent::StatsOutput < Fluent::Output
   # Called when new line comes. This method actually does not emit
   def emit(tag, es, chain)
     # stats
-    matches = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
+    matches = { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {}, :avg_count => {} }
     es.each do |time, record|
       record = stringify_keys(record)
       @sum_keys.each do |key|
@@ -127,6 +129,8 @@ class Fluent::StatsOutput < Fluent::Output
       @avg_keys.each do |key|
         next unless record[key] and value = record[key].to_f
         matches[:avg][key] = sum(matches[:avg][key], value)
+        # ignore zero emitted value
+        matches[:avg_count][key] = sum(matches[:avg_count][key], 1) unless (@zero_emit and value.zero?)
       end
       record.keys.each do |key|
         key = key.to_s
@@ -142,6 +146,8 @@ class Fluent::StatsOutput < Fluent::Output
         end
         if @avg and @avg.match(key)
           matches[:avg][key] = sum(matches[:avg][key], value) # sum yet
+          # ignore zero emitted value
+          matches[:avg_count][key] = sum(matches[:avg_count][key], 1) unless (@zero_emit and value.zero?)
         end
       end if @sum || @max || @min || @avg
       matches[:count] += 1
@@ -150,7 +156,8 @@ class Fluent::StatsOutput < Fluent::Output
     aggregate_key = @aggregate_proc.call(tag)
 
     # thread safe merge
-    @matches[aggregate_key] ||= { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {} }
+    @matches[aggregate_key] ||= { :count => 0, :sum => {}, :max => {}, :min => {}, :avg => {}, :avg_count => {} }
+    @matches[aggregate_key][:avg_count] ||= {} # for lower version compatibility
     @mutex.synchronize do
       matches[:sum].keys.each do |key|
         @matches[aggregate_key][:sum][key] = sum(@matches[aggregate_key][:sum][key], matches[:sum][key])
@@ -163,6 +170,7 @@ class Fluent::StatsOutput < Fluent::Output
       end
       matches[:avg].keys.each do |key|
         @matches[aggregate_key][:avg][key] = sum(@matches[aggregate_key][:avg][key], matches[:avg][key]) # sum yet
+        @matches[aggregate_key][:avg_count][key] = sum(@matches[aggregate_key][:avg_count][key], matches[:avg_count][key])
       end
       @matches[aggregate_key][:count] += matches[:count]
     end
@@ -230,9 +238,11 @@ class Fluent::StatsOutput < Fluent::Output
     matches[:min].keys.each do |key|
       output[key + @min_suffix] = matches[:min][key]
     end
+    matches[:avg_count] ||= {} # for lower version compatibility
     matches[:avg].keys.each do |key|
       output[key + @avg_suffix] = matches[:avg][key]
-      output[key + @avg_suffix] /= matches[:count].to_f if matches[:count] > 0
+      count = matches[:avg_count][key].to_f
+      output[key + @avg_suffix] /= count unless count.zero?
     end
     output
   end
