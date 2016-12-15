@@ -7,6 +7,11 @@ class Fluent::StatsOutput < Fluent::Output
     define_method("log") { $log }
   end
 
+  # Define `router` method of v0.12 to support v0.10 or earlier
+  unless method_defined?(:router)
+    define_method("router") { Fluent::Engine }
+  end
+
   def initialize
     super
     require 'pathname'
@@ -221,7 +226,7 @@ class Fluent::StatsOutput < Fluent::Output
       end
       report_time(" emit_tag:#{emit_tag} matches:#{matches}") do
         output = generate_output(matches)
-        Fluent::Engine.emit(emit_tag, time, output) if output and !output.empty?
+        router.emit(emit_tag, time, output) if output and !output.empty?
       end
     end
   end
