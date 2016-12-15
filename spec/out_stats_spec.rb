@@ -92,7 +92,7 @@ describe Fluent::StatsOutput do
       end
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("stats.#{tag}", time, {
+        expect(driver.instance.router).to receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
         })
       end
@@ -111,10 +111,10 @@ describe Fluent::StatsOutput do
       end
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("stats.#{tag}", time, {
+        expect(driver.instance.router).to receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
         })
-        expect(Fluent::Engine).to receive(:emit).with("stats.#{tag}", time, {
+        expect(driver.instance.router).to receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>0,"5xx_count"=>0,"reqtime_max"=>0,"reqtime_min"=>0,"reqtime_avg"=>0.0
         })
       end
@@ -132,7 +132,7 @@ describe Fluent::StatsOutput do
       end
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("stats.#{tag}", time, {
+        expect(driver.instance.router).to receive(:emit).with("stats.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
         })
       end
@@ -160,7 +160,7 @@ describe Fluent::StatsOutput do
     end
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("stats.#{tag}", time, {
+        expect(driver.instance.router).to receive(:emit).with("stats.#{tag}", time, {
           "reqtime_sum"=>3.000,"reqtime_max"=>2.000,"reqtime_min"=>1.000,"reqtime_avg"=>1.500,"reqsize_sum"=>30
         })
       end
@@ -176,7 +176,7 @@ describe Fluent::StatsOutput do
       end
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("foo", time, {
+        expect(driver.instance.router).to receive(:emit).with("foo", time, {
           "4xx_count"=>6,"5xx_count"=>6
         })
       end
@@ -193,7 +193,7 @@ describe Fluent::StatsOutput do
       let(:tag) { 'foo.bar' }
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("foo.#{tag}", time, {
+        expect(driver.instance.router).to receive(:emit).with("foo.#{tag}", time, {
           "4xx_count"=>6,"5xx_count"=>6
         })
       end
@@ -210,7 +210,7 @@ describe Fluent::StatsOutput do
       let(:tag) { 'foo.bar' }
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("bar", time, {
+        expect(driver.instance.router).to receive(:emit).with("bar", time, {
           "4xx_count"=>6,"5xx_count"=>6
         })
       end
@@ -227,7 +227,7 @@ describe Fluent::StatsOutput do
       let(:tag) { 'foo.bar' }
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("#{tag}.foo", time, {
+        expect(driver.instance.router).to receive(:emit).with("#{tag}.foo", time, {
           "4xx_count"=>6,"5xx_count"=>6
         })
       end
@@ -244,7 +244,7 @@ describe Fluent::StatsOutput do
       let(:tag) { 'foo.bar' }
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("foo", time, {
+        expect(driver.instance.router).to receive(:emit).with("foo", time, {
           "4xx_count"=>6,"5xx_count"=>6
         })
       end
@@ -261,7 +261,7 @@ describe Fluent::StatsOutput do
       let(:tag) { 'foo.bar' }
       before do
         allow(Fluent::Engine).to receive(:now).and_return(time)
-        expect(Fluent::Engine).to receive(:emit).with("foo", time, {
+        expect(driver.instance.router).to receive(:emit).with("foo", time, {
           "4xx_count"=>6,"5xx_count"=>6
         })
       end
@@ -288,7 +288,7 @@ describe Fluent::StatsOutput do
         end
         before do
           allow(Fluent::Engine).to receive(:now).and_return(time)
-          expect(Fluent::Engine).to receive(:emit).with("foo", time, {
+          expect(driver.instance.router).to receive(:emit).with("foo", time, {
             "4xx_count"=>12,"5xx_count"=>12,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
           })
         end
@@ -308,10 +308,10 @@ describe Fluent::StatsOutput do
         end
         before do
           allow(Fluent::Engine).to receive(:now).and_return(time)
-          expect(Fluent::Engine).to receive(:emit).with("stats.foo.bar", time, {
+          expect(driver.instance.router).to receive(:emit).with("stats.foo.bar", time, {
             "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
           })
-          expect(Fluent::Engine).to receive(:emit).with("stats.foo.bar2", time, {
+          expect(driver.instance.router).to receive(:emit).with("stats.foo.bar2", time, {
             "4xx_count"=>6,"5xx_count"=>6,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
           })
         end
@@ -332,7 +332,7 @@ describe Fluent::StatsOutput do
         end
         before do
           allow(Fluent::Engine).to receive(:now).and_return(time)
-          expect(Fluent::Engine).to receive(:emit).with("stats.foo", time, {
+          expect(driver.instance.router).to receive(:emit).with("stats.foo", time, {
             "4xx_count"=>12,"5xx_count"=>12,"reqtime_max"=>6,"reqtime_min"=>1,"reqtime_avg"=>3.0
           })
         end
@@ -372,10 +372,9 @@ describe Fluent::StatsOutput do
         loaded_saved_duration = driver.instance.saved_duration
 
         expect(loaded_matches).to eql(stored_matches)
-        expect(loaded_saved_at).to eql(stored_saved_at)
+        expect(loaded_saved_at.to_i).to eql(stored_saved_at.to_i)
         expect(loaded_saved_duration).to eql(stored_saved_duration)
       end
     end
   end
 end
-
