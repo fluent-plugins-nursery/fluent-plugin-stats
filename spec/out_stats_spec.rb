@@ -372,10 +372,9 @@ describe Fluent::StatsOutput do
         loaded_saved_duration = driver.instance.saved_duration
 
         expect(loaded_matches).to eql(stored_matches)
-        expect(loaded_saved_at).to eql(stored_saved_at)
+        expect(loaded_saved_at.to_i).to eql(stored_saved_at.to_i)
         expect(loaded_saved_duration).to eql(stored_saved_duration)
       end
     end
   end
 end
-
