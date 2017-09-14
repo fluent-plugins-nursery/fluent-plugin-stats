@@ -1,3 +1,9 @@
+## 0.4.0 (2017/09/15)
+
+Enhancements:
+
+* Support v0.14
+
 ## 0.3.6 (2014/12/3)
 
 Enhancements:
